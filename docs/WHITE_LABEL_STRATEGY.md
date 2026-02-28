@@ -1,8 +1,12 @@
-# UrERP White-Label Strategy Document
+# Yukta White-Label Strategy Document
 
-**Version:** 1.0
+**Brand Name:** Yukta (युक्त - Sanskrit for "Connected/United")
+**Version:** 1.1
 **Last Updated:** 2026-02-28
 **Owner:** Utpal Raina
+
+> **Note:** Brand changed from "UrERP" to "Yukta" for stronger identity.
+> See `YUKTA_WHITE_LABEL_PLAN.md` for detailed implementation plan.
 
 ---
 
@@ -22,7 +26,9 @@
 ## 1. Executive Summary
 
 ### Vision
-Transform Frappe/ERPNext HRMS into **UrERP** - a white-labeled, enterprise-grade Multi-Country HRMS solution targeting mid-to-large enterprises with operations across UAE, India, USA, Canada, Bhutan, and Korea.
+Transform Frappe/ERPNext HRMS into **Yukta** - a white-labeled, enterprise-grade Multi-Country HRMS solution targeting mid-to-large enterprises with operations across UAE, India, USA, Canada, Bhutan, and Korea.
+
+**Tagline:** "Connected Workforce, United Success"
 
 ### Unique Value Proposition
 - 20+ years Oracle HCM expertise baked into the product
@@ -82,14 +88,17 @@ Transform Frappe/ERPNext HRMS into **UrERP** - a white-labeled, enterprise-grade
 
 ### Brand Identity
 
-| Element | Current (ERPNext) | UrERP |
+| Element | Current (ERPNext) | Yukta |
 |---------|-------------------|-------|
-| Name | ERPNext | UrERP |
-| Tagline | Open Source ERP | Multi-Country HRMS |
-| Primary Color | #0089FF | TBD |
-| Secondary Color | #gray | TBD |
+| Name | ERPNext | Yukta (युक्त) |
+| Tagline | Open Source ERP | Connected Workforce, United Success |
+| Primary | #0089FF | #0F6B8C (Deep Teal Blue) |
+| Secondary | #gray | #3D4F5F (Slate Gray) |
+| Accent | - | #E8A838 (Saffron Gold) |
+| Background | - | #F7F9FC (Off-White) |
+| Text | - | #1A2332 (Charcoal) |
 | Logo | ERPNext logo | TBD |
-| Font | Inter | TBD |
+| Font | Inter | Inter |
 
 ### Brand Voice
 - Professional yet approachable

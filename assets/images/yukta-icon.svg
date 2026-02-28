@@ -1,0 +1,15 @@
+<svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- YUKTA Icon Only - For favicon, app icon -->
+
+  <!-- Subtle sacred circle -->
+  <circle cx="30" cy="30" r="28" stroke="#1A8DB5" stroke-width="1.5" opacity="0.2"/>
+
+  <!-- Y shape - convergence -->
+  <path d="M15 14L30 32L45 14" stroke="#0F6B8C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Saffron gold stem - stability -->
+  <line x1="30" y1="32" x2="30" y2="48" stroke="#E8A838" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Inner sacred circle hint -->
+  <circle cx="30" cy="30" r="5" fill="none" stroke="#0F6B8C" stroke-width="1.5" opacity="0.4"/>
+</svg>
