@@ -1,0 +1,28 @@
+# Environment
+.env.local
+.env.*.local
+
+# Docker volumes
+data/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Apps (separate repos)
+apps/

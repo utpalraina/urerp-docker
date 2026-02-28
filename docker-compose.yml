@@ -1,0 +1,187 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: urerp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: urerp
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-UrERP2025Secure}
+      POSTGRES_DB: urerp_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urerp -d urerp_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - urerp-network
+
+  # Redis Cache
+  redis-cache:
+    image: redis:7-alpine
+    container_name: urerp-redis-cache
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-cache-data:/data
+    networks:
+      - urerp-network
+
+  # Redis Queue
+  redis-queue:
+    image: redis:7-alpine
+    container_name: urerp-redis-queue
+    restart: unless-stopped
+    volumes:
+      - redis-queue-data:/data
+    networks:
+      - urerp-network
+
+  # Redis Socketio
+  redis-socketio:
+    image: redis:7-alpine
+    container_name: urerp-redis-socketio
+    restart: unless-stopped
+    volumes:
+      - redis-socketio-data:/data
+    networks:
+      - urerp-network
+
+  # Frappe/ERPNext Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urerp-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=urerp_db
+      - DB_USER=urerp
+      - DB_PASSWORD=${DB_PASSWORD:-UrERP2025Secure}
+      - REDIS_CACHE=redis://redis-cache:6379
+      - REDIS_QUEUE=redis://redis-queue:6379
+      - REDIS_SOCKETIO=redis://redis-socketio:6379
+      - SITE_NAME=urerp.localhost
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - INSTALL_APPS=erpnext,hrms,custom_hr_multi
+    volumes:
+      - sites-data:/home/frappe/frappe-bench/sites
+      - logs-data:/home/frappe/frappe-bench/logs
+      - ./apps/custom_hr_multi:/home/frappe/frappe-bench/apps/custom_hr_multi:ro
+    networks:
+      - urerp-network
+
+  # Frappe Web Server
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urerp-frontend
+    restart: unless-stopped
+    command: >
+      bash -c "
+        cd /home/frappe/frappe-bench &&
+        bench serve --port 8000
+      "
+    depends_on:
+      - backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - sites-data:/home/frappe/frappe-bench/sites
+      - logs-data:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-network
+
+  # Background Workers
+  worker-short:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urerp-worker-short
+    restart: unless-stopped
+    command: bench worker --queue short
+    depends_on:
+      - backend
+    volumes:
+      - sites-data:/home/frappe/frappe-bench/sites
+      - logs-data:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-network
+
+  worker-long:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urerp-worker-long
+    restart: unless-stopped
+    command: bench worker --queue long
+    depends_on:
+      - backend
+    volumes:
+      - sites-data:/home/frappe/frappe-bench/sites
+      - logs-data:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-network
+
+  # Scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urerp-scheduler
+    restart: unless-stopped
+    command: bench schedule
+    depends_on:
+      - backend
+    volumes:
+      - sites-data:/home/frappe/frappe-bench/sites
+      - logs-data:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-network
+
+  # Socket.io for realtime
+  socketio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urerp-socketio
+    restart: unless-stopped
+    command: node /home/frappe/frappe-bench/apps/frappe/socketio.js
+    depends_on:
+      - backend
+    ports:
+      - "9000:9000"
+    volumes:
+      - sites-data:/home/frappe/frappe-bench/sites
+      - logs-data:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-network
+
+volumes:
+  postgres-data:
+  redis-cache-data:
+  redis-queue-data:
+  redis-socketio-data:
+  sites-data:
+  logs-data:
+
+networks:
+  urerp-network:
+    driver: bridge

@@ -1,0 +1,135 @@
+# UrERP Docker Compose - PostgreSQL Backend
+
+# Simplified UrERP Docker Compose using official Frappe images
+# For quick deployment without building custom images
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: urerp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: urerp
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-UrERP2025Secure}
+      POSTGRES_DB: urerp_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urerp -d urerp_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - urerp-net
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: urerp-cache
+    restart: unless-stopped
+    networks:
+      - urerp-net
+
+  redis-queue:
+    image: redis:7-alpine
+    container_name: urerp-queue
+    restart: unless-stopped
+    networks:
+      - urerp-net
+
+  backend:
+    image: frappe/erpnext:v15
+    container_name: urerp-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - FRAPPE_SITE_NAME_HEADER=urerp.localhost
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-net
+
+  frontend:
+    image: frappe/erpnext:v15
+    container_name: urerp-web
+    restart: unless-stopped
+    command: ["nginx-entrypoint.sh"]
+    depends_on:
+      - backend
+    environment:
+      - BACKEND=backend:8000
+      - FRAPPE_SITE_NAME_HEADER=urerp.localhost
+      - SOCKETIO=websocket:9000
+      - UPSTREAM_REAL_IP_ADDRESS=127.0.0.1
+      - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
+      - UPSTREAM_REAL_IP_RECURSIVE=off
+    ports:
+      - "8081:8080"
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - urerp-net
+
+  websocket:
+    image: frappe/erpnext:v15
+    container_name: urerp-socketio
+    restart: unless-stopped
+    command: ["node", "/home/frappe/frappe-bench/apps/frappe/socketio.js"]
+    depends_on:
+      - backend
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - urerp-net
+
+  queue-short:
+    image: frappe/erpnext:v15
+    container_name: urerp-worker-short
+    restart: unless-stopped
+    command: ["bench", "worker", "--queue", "short,default"]
+    depends_on:
+      - backend
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-net
+
+  queue-long:
+    image: frappe/erpnext:v15
+    container_name: urerp-worker-long
+    restart: unless-stopped
+    command: ["bench", "worker", "--queue", "long"]
+    depends_on:
+      - backend
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-net
+
+  scheduler:
+    image: frappe/erpnext:v15
+    container_name: urerp-scheduler
+    restart: unless-stopped
+    command: ["bench", "schedule"]
+    depends_on:
+      - backend
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - urerp-net
+
+volumes:
+  postgres-data:
+  sites:
+  logs:
+
+networks:
+  urerp-net:
+    driver: bridge
